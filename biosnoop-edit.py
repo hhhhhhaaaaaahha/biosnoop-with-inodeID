@@ -38,6 +38,7 @@ debug = 0
 bpf_text="""
 #include <uapi/linux/ptrace.h>
 #include <linux/blkdev.h>
+#include <linux/fs.h>
 
 // new lines
 struct start_req_t {
