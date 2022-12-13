@@ -1,5 +1,6 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/blkdev.h>
+#include <linux/fs.h>
 
 // new lines
 struct start_req_t {
@@ -11,6 +12,7 @@ struct start_req_t {
 struct val_t {
     u64 ts;
     u32 pid;
+    u64 inode_id; // new line
     char name[TASK_COMM_LEN];
 };
 
@@ -22,6 +24,7 @@ struct data_t {
     u64 sector;
     u64 len;
     u64 ts;
+    u64 inode_id; // new line
     char disk_name[DISK_NAME_LEN];
     char name[TASK_COMM_LEN];
 };
@@ -38,6 +41,7 @@ int trace_pid_start(struct pt_regs *ctx, struct request *req)
     u64 ts;
 
     if (bpf_get_current_comm(&val.name, sizeof(val.name)) == 0) {
+        val.inode_id = req->bio->i_ino;
         val.pid = bpf_get_current_pid_tgid() >> 32;
         if (##QUEUE##) {
             val.ts = bpf_ktime_get_ns();
@@ -103,6 +107,7 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
         data.pid = valp->pid;
         // data.len = req->__data_len;
         data.sector = req->__sector;
+        data.inode_id = valp->inode_id; // new line
         bpf_probe_read(&data.name, sizeof(data.name), valp->name);
         struct gendisk *rq_disk = req->rq_disk;
         bpf_probe_read(&data.disk_name, sizeof(data.disk_name),
