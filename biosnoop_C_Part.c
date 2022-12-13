@@ -2,12 +2,12 @@
 #include <linux/blkdev.h>
 #include <linux/fs.h>
 
-// new lines
+// bug fix
 struct start_req_t {
     u64 ts;
     u64 data_len;
 };
-// end of new lines
+// end of bug fix
 
 struct val_t {
     u64 ts;
@@ -29,7 +29,7 @@ struct data_t {
     char name[TASK_COMM_LEN];
 };
 
-// BPF_HASH(start, struct request *);
+// BPF_HASH(start, struct request *); // bug fix
 BPF_HASH(start, struct request *, struct start_req_t); // new line
 BPF_HASH(infobyreq, struct request *, struct val_t);
 BPF_PERF_OUTPUT(events);
@@ -54,19 +54,19 @@ int trace_pid_start(struct pt_regs *ctx, struct request *req)
 // time block I/O
 int trace_req_start(struct pt_regs *ctx, struct request *req)
 {
+    // bug fix
     /*
     u64 ts;
     ts = bpf_ktime_get_ns();
     start.update(&req, &ts);
     */
 
-    // new lines
     struct start_req_t start_req = {
         .ts = bpf_ktime_get_ns(),
         .data_len = req->__data_len
     };
     start.update(&req, &start_req);
-    // end of new lines
+    // end of bug fix
 
     return 0;
 }
@@ -74,8 +74,8 @@ int trace_req_start(struct pt_regs *ctx, struct request *req)
 // output
 int trace_req_completion(struct pt_regs *ctx, struct request *req)
 {
-    // u64 *tsp;
-    struct start_req_t *startp; // new line
+    // u64 *tsp; // bug fix
+    struct start_req_t *startp; // bug fix
     struct val_t *valp;
     struct data_t data = {};
     u64 ts;
@@ -83,29 +83,29 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
     // fetch timestamp and calculate delta
     // tsp = start.lookup(&req);
     // if (tsp == 0) {
-    startp = start.lookup(&req); // new line
-    if (startp == 0) {           // new line 
+    startp = start.lookup(&req); // bug fix
+    if (startp == 0) {           // bug fix
         // missed tracing issue
         return 0;
     }
     ts = bpf_ktime_get_ns();
     // data.delta = ts - *tsp;
-    data.delta = ts - startp->ts; // new line
+    data.delta = ts - startp->ts; // bug fix
     data.ts = ts / 1000;
     data.qdelta = 0;
 
     valp = infobyreq.lookup(&req);
-    data.len = startp->data_len; // new line
+    data.len = startp->data_len; // bug fix
     if (valp == 0) {
-        // data.len = req->__data_len;
+        // data.len = req->__data_len; // bug fix
         strcpy(data.name, "?");
     } else {
         if (##QUEUE##) {
-            // data.qdelta = *tsp - valp->ts;
-            data.qdelta = startp->ts - valp->ts; // new line
+            // data.qdelta = *tsp - valp->ts; // bug fix
+            data.qdelta = startp->ts - valp->ts; // bug fix
         }
         data.pid = valp->pid;
-        // data.len = req->__data_len;
+        // data.len = req->__data_len; // bug fix
         data.sector = req->__sector;
         data.inode_id = valp->inode_id; // new line
         bpf_probe_read(&data.name, sizeof(data.name), valp->name);
@@ -134,3 +134,4 @@ int trace_req_completion(struct pt_regs *ctx, struct request *req)
     infobyreq.delete(&req);
 
     return 0;
+}
