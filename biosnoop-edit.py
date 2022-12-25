@@ -186,8 +186,8 @@ if debug or args.ebpf:
 # initialize BPF
 b = BPF(text=bpf_text)
 b.attach_kprobe(event="blk_account_io_start", fn_name="trace_pid_start")
-if BPF.get_kprobe_functions(b'blk_start_request'):
-    b.attach_kprobe(event="blk_start_request", fn_name="trace_req_start")
+if BPF.get_kprobe_functions(b'blk_start_request'): # can be removed due to Linux nno longer usinng single queue
+    b.attach_kprobe(event="blk_start_request", fn_name="trace_req_start") # can be removed due to Linux nno longer usinng single queue
 b.attach_kprobe(event="blk_mq_start_request", fn_name="trace_req_start")
 b.attach_kprobe(event="blk_account_io_done",
     fn_name="trace_req_completion")
