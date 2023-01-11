@@ -141,8 +141,8 @@ def print_event(cpu, data, size):
     if args.time:
         print("%-8s " % strftime("%H:%M:%S"), end="")
     print("%-6d %-14.14s %-4s %-5s %-8d %-8d %s" % (event.pid,
-        event.comm, prot, flags, event.off / 1024, event.len / 1024,
-        event.path))
+        event.comm.decode('UTF-8'), prot, flags, event.off / 1024, event.len / 1024,
+        event.path.decode('UTF-8')))
 
 # initialize BPF
 b = BPF(text=bpf_text)
